@@ -15,7 +15,7 @@ router.post("/", async (req, res) => {
         process.env.STRIPE_WEBHOOK_SECRET
         );
     } catch (err) {
-        console.log(" Webhook signature verification failed:", err.message);
+        console.log("Webhook signature verification failed:", err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -23,17 +23,18 @@ router.post("/", async (req, res) => {
         const session = event.data.object;
         const userId = session.metadata.userId;
         const items = JSON.parse(session.metadata.items);
-        const totalAmount = parseFloat(session.metadata.totalAmount);
+        const totalPrice = parseFloat(session.metadata.totalPrice);
 
         try {
         await Order.create({
             user: userId,
-            books: items.map((item) => ({
-            book: item.id,
+            products: items.map((item) => ({
+            product: item.id,
+            name: item.name,
             quantity: item.quantity,
             price: item.price,
             })),
-            totalPrice: totalAmount,
+            totalPrice,
             stripeSessionId: session.id,
             status: "Pending",
         });
