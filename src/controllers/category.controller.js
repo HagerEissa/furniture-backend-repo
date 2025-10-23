@@ -1,7 +1,6 @@
 const categoryModel = require('../models/category.model');
 
 
-// getAllCategories
 exports.getAllCategories = async(req,res)=>{
     try{
         const categories = await categoryModel.find();
@@ -12,7 +11,7 @@ exports.getAllCategories = async(req,res)=>{
     }
 }
 
-//getCategoryById
+
 exports.getCategoryById = async(req,res)=>{
     try{
         const category = await categoryModel.findById(req.params.id);
@@ -26,7 +25,6 @@ exports.getCategoryById = async(req,res)=>{
     }
 }
 
-// createCategory
 exports.addCategory = async(req,res)=>{
     try{
         req.body.imgURL = req.file.path;
@@ -39,7 +37,7 @@ exports.addCategory = async(req,res)=>{
     }
 }
 
-//updateCategory
+
 exports.updateCategory = async(req,res)=>{
     try{
         if(req.file){
@@ -56,7 +54,7 @@ exports.updateCategory = async(req,res)=>{
     }
 }
 
-//deleteCategory
+
 exports.deleteCategory = async(req,res)=>{
     try{
         const category = await categoryModel.findByIdAndDelete(req.params.id);
