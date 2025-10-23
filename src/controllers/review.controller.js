@@ -2,53 +2,42 @@ const Review = require("../models/review.model");
 const Product = require("../models/product.model");
 
 exports.createReviewandRating = async (req, res) => {
-    const { comment, rating } = req.body;
-    const { productId } = req.params;
-    const userId = req.user.id;
+  const { comment, rating } = req.body;
+  const { productId } = req.params;
+  const userId = req.user.id;
 
-    try {
-        const product = await Product.findById(productId);
-        if (!product) return res.status(404).json({ message: "Product not found" });
+  try {
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
 
-        if (rating < 1 || rating > 5) {
-        return res
-            .status(400)
-            .json({ message: "Rating must be between 1 and 5." });
-        }
+    if (rating < 1 || rating > 5)
+      return res.status(400).json({ message: "Rating must be between 1 and 5." });
 
-        const existingReview = await Review.findOne({ userId, productId });
-        if (existingReview) {
-        return res
-            .status(400)
-            .json({ message: "You have already reviewed this product." });
-        }
+    const existingReview = await Review.findOne({ userId, productId });
+    if (existingReview)
+      return res.status(400).json({ message: "You already reviewed this product." });
 
-        const review = await Review.create({ userId, productId, comment, rating });
+    const review = await Review.create({ userId, productId, comment, rating });
+    product.reviewId.push(review._id);
 
-        product.reviewId.push(review._id);
+    const oldAverage = product.averageRating || 0;
+    const numOfReviews = product.numOfReviews || 0;
 
-        const reviews = await Review.find({ productId });
-        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-        const averageRating = totalRating / reviews.length;
+    const newAverage =
+      (oldAverage * numOfReviews + rating) / (numOfReviews + 1);
 
-        product.averageRating = averageRating;
-        product.numOfReviews = reviews.length;
-        await product.save();
+    product.averageRating = newAverage;
+    product.numOfReviews = numOfReviews + 1;
 
-        const reviewWithUser = await Review.findById(review._id).populate(
-        "userId",
-        "username email"
-        );
+    await product.save();
 
-        res.status(200).json({
-        message: "Review created successfully",
-        review: reviewWithUser,
-        averageRating,
-        });
-    } catch (error) {
-        console.error("Error posting review:", error);
-        res.status(500).json({ message: error.message });
-    }
+    const reviewWithUser = await Review.findById(review._id).populate("userId","username email");
+
+    res.status(201).json({message: "Review added successfully", review: reviewWithUser,averageRating: newAverage,});
+  } catch (error) {
+    console.error("Error creating review:", error);
+    res.status(500).json({ message: error.message });
+  }
 };
 
 exports.getReviewsByProductId = async (req, res) => {
@@ -72,48 +61,41 @@ exports.getReviewsByProductId = async (req, res) => {
 };
 
 exports.updateReviewById = async (req, res) => {
+  const { productId } = req.params;
+  const { comment, rating } = req.body;
+  const userId = req.user.id;
+
   try {
-    const { productId } = req.params;
-    const { comment, rating } = req.body;
-    const userId = req.user.id;
+    const product = await Product.findById(productId);
+    const review = await Review.findOne({ productId, userId });
 
-    const review = await Review.findOne({ productId, userId }).sort({
-      createdAt: -1,
-    });
-    if (!review) {
+    if (!product || !review)
       return res.status(404).json({ message: "Review not found" });
+
+    const oldRating = review.rating;
+
+    review.comment = comment || review.comment;
+    if (rating) review.rating = rating;
+    await review.save();
+
+    if (rating) {
+      const oldAverage = product.averageRating || 0;
+      const numOfReviews = product.numOfReviews || 0;
+
+      const newAverage =
+        (oldAverage * numOfReviews - oldRating + rating) / numOfReviews;
+
+      product.averageRating = newAverage;
+      await product.save();
     }
 
-    if (rating && (rating < 1 || rating > 5)) {
-      return res
-        .status(400)
-        .json({ message: "Rating must be between 1 and 5." });
-    }
-
-    const updatedReview = await Review.findByIdAndUpdate(
-      review._id,
-      {
-        comment: comment || review.comment,
-        rating: rating || review.rating,
-      },
-      { new: true }
-    ).populate("userId", "username email");
-
-    const reviews = await Review.find({ productId });
-    const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-    const averageRating = totalRating / reviews.length;
-
-    await Product.findByIdAndUpdate(productId, {
-      averageRating,
-      numOfReviews: reviews.length,
-    });
-
-    res.status(200).json(updatedReview);
+    res.status(200).json({ message: "Review updated", review });
   } catch (error) {
     console.error("Update Review Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.deleteReviewById = async (req, res) => {
   const { productId } = req.params;
@@ -121,41 +103,39 @@ exports.deleteReviewById = async (req, res) => {
   const isAdmin = req.user.role === "ADMIN";
 
   try {
-    let review;
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
 
+    let review;
     if (isAdmin) {
       const { reviewId } = req.body;
-      if (!reviewId)
-        return res.status(400).json({ message: "reviewId is required for admin" });
       review = await Review.findById(reviewId);
     } else {
       review = await Review.findOne({ productId, userId });
     }
 
-    if (!review) {
-      return res.status(404).json({ message: "Review not found" });
+    if (!review) return res.status(404).json({ message: "Review not found" });
+
+    await Review.findByIdAndDelete(review._id);
+    await Product.findByIdAndUpdate(productId, {$pull: { reviewId: review._id },});
+
+    const oldAverage = product.averageRating || 0;
+    const numOfReviews = product.numOfReviews || 0;
+    const deletedRating = review.rating;
+
+    let newAverage = 0;
+    let newCount = numOfReviews - 1;
+
+    if (newCount > 0) {
+      newAverage = (oldAverage * numOfReviews - deletedRating) / newCount;
     }
 
-    const deletedReview = await Review.findByIdAndDelete(review._id);
+    product.averageRating = newAverage;
+    product.numOfReviews = newCount;
 
-    await Product.findByIdAndUpdate(productId, {
-      $pull: { reviewId: review._id },
-    });
+    await product.save();
 
-    const reviews = await Review.find({ productId });
-    const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-    const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
-
-    await Product.findByIdAndUpdate(productId, {
-      averageRating,
-      numOfReviews: reviews.length,
-    });
-
-    res.status(200).json({
-      message: "Review deleted successfully",
-      deletedReview,
-      averageRating,
-    });
+    res.status(200).json({message: "Review deleted successfully",averageRating: newAverage,});
   } catch (error) {
     console.error("Error deleting review:", error);
     res.status(500).json({ message: error.message });
