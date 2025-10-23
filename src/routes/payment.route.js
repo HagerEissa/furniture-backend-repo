@@ -1,51 +1,59 @@
 const express = require("express");
-const authMiddleware = require("../middlewares/auth.middleware"); 
-const roleMiddleware = require("../middlewares/role.middleware");
-
 const router = express.Router();
 const Stripe = require("stripe");
-const ROLES = require("../utils/roles.util");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const Order = require("../models/order.model");
+const authMiddleware = require("../middlewares/auth.middleware"); 
 
-router.post("/create-checkout-session", authMiddleware ,roleMiddleware(ROLES.USER),async (req, res) => {
+router.post("/create-checkout-session", authMiddleware, async (req, res) => {
   try {
-
-    const { items} = req.body;
+    const { items, shippingInfo } = req.body;
 
     if (!items || items.length === 0)
       return res.status(400).json({ error: "No items provided" });
 
-    const userId = req.user._id.toString();
+    const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity,0);
-
+    const userId = req.user._id;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-      line_items: items.map((item) => ({
+      line_items: items.map(item => ({
         price_data: {
           currency: "usd",
           product_data: { name: item.name },
-          unit_amount: item.price * 100, 
+          unit_amount: Math.round(item.price * 100),
         },
         quantity: item.quantity,
       })),
-      success_url: "http://localhost:3000/payment-success",
-      cancel_url: "http://localhost:3000/payment-cancel",
+      success_url: "http://localhost:4200/payment-success",
+      cancel_url: "http://localhost:4200/checkout",
       metadata: {
-        userId,
-        totalPrice,
-        items: JSON.stringify(
-          items.map((i) => ({
-            id: i.id,
-            name: i.name,
-            price: i.price,
-            quantity: i.quantity,
-          }))
-        ),
+        userId: userId.toString(),
+        totalPrice: totalPrice.toString(),
+        items: JSON.stringify(items)
       },
     });
+
+
+    const orderData = {
+      user: userId,
+      products: items.map(it => ({
+        product: it.id,
+        name: it.name,
+        price: it.price,
+        quantity: it.quantity,
+        total: it.price * it.quantity,
+      })),
+      totalPrice,
+      paymentMethod: 'stripe', 
+      status: 'pending',
+      stripeSessionId: session.id,
+      shippingInfo,
+    };
+
+    await Order.create(orderData);
 
     res.json({ url: session.url });
   } catch (err) {

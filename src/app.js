@@ -68,7 +68,6 @@ app.use("/api", oauthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/product", reviewRoutes);
 app.use("/api/payment", paymentRoutes);
-app.use("/api/webhook", webhookRoutes);
 
 app.use('/api/product',productRouter);
 app.use('/api/category',categoryRouter);

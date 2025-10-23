@@ -2,14 +2,14 @@ const orderModel = require('../models/order.model');
 
 exports.createOrder = async (req, res) => {
   try {
-    const {userId,products,totalPrice,shippingInfo,paymentMethod} = req.body;
+    const { products, totalPrice, shippingInfo, paymentMethod } = req.body;
 
-    if (!userId || !products || products.length === 0 || !totalPrice || !shippingInfo) {
+    if (!products || products.length === 0 || !totalPrice || !shippingInfo) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
     const order = await orderModel.create({
-      userId,
+      userId: req.user._id, 
       products,
       totalPrice,
       shippingInfo,
@@ -27,9 +27,9 @@ exports.createOrder = async (req, res) => {
 
 exports.getUserOrders = async (req, res) => {
   try {
-    const { userId } = req.params; 
-
+    const userId = req.user._id; 
     const orders = await orderModel.find({ userId }).sort({ createdAt: -1 });
+
     if (!orders.length) {
       return res.status(404).json({ message: 'No orders found for this user' });
     }
@@ -54,7 +54,6 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-// for admin
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
