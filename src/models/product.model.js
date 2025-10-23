@@ -39,6 +39,22 @@ const productSchema =new mongoose.Schema({
         type:Boolean,
         default:false
     },
+    reviewId: [
+        {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'reviews',
+        },
+    ],
+    averageRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5,
+    },
+    numOfReviews: {
+        type: Number,
+        default: 0,
+    },
     },{
         timestamps:true
     })
