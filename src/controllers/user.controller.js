@@ -58,16 +58,22 @@ exports.getUsers = async (req, res) => {
 
 exports.updateRole = async (req, res) => {
     try {
+        if (req.user.id === req.params.id) {
+        return res.status(403).json({ message: "You cannot change your own role." });
+        }
+
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const { role } = req.body;
-        if (!Object.values(ROLES).includes(role))
+        if (!Object.values(ROLES).includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
+        }
 
         user.role = role;
         await user.save();
-        res.json({ message: "Role updated", user });
+
+        res.json({ message: "Role updated successfully", user });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -75,11 +81,16 @@ exports.updateRole = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
+        if (req.user.id === req.params.id) {
+        return res.status(403).json({ message: "You cannot delete your own account." });
+        }
+
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
         await user.deleteOne();
-        res.json({ message: "User deleted" });
+
+        res.json({ message: "User deleted successfully" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
