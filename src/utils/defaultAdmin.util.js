@@ -12,31 +12,29 @@ cloudinary.config({
 
 const defaultAdmin = async () => {
     try {
-        const adminExists = await User.findOne({ role: ROLES.ADMIN });
-        if(adminExists) return;
-        
-        const filePath = path.join(__dirname, "../uploads/avatar.png");
-        const result = await cloudinary.uploader.upload(filePath, {
-            folder: "avatar",
-            public_id: "default-avatar",
-            overwrite: true,
-        });
+    const adminExists = await User.findOne({ role: ROLES.ADMIN });
+    if (adminExists) return;
 
-        const admin = new User({
-            name: "Sandy Azzat",
-            email: "sandyazzat@casanova.com",
-            password: "Admin12356",
-            phone: "+201234567890",
-            avatar: result.secure_url, 
-            role: ROLES.ADMIN,
-        });
+    const filePath = path.join(__dirname, "../uploads/avatar.png");
+    const result = await cloudinary.uploader.upload(filePath, {
+        folder: "avatar",
+        public_id: process.env.ADMIN_AVATAR || "default-avatar",
+        overwrite: true,
+    });
 
-        await admin.save();
+    const admin = new User({
+        name: process.env.ADMIN_NAME,
+        email: process.env.ADMIN_EMAIL,
+        password: process.env.ADMIN_PASSWORD,
+        phone: process.env.ADMIN_PHONE,
+        avatar: result.secure_url,
+        role: process.env.ADMIN_ROLE || ROLES.ADMIN,
+    });
 
-        console.log("Default admin user created");
-    } catch (err) {
-        console.error("Error creating default admin:", err);
+    await admin.save();
+    } catch {
     }
 };
+
 
 module.exports = defaultAdmin;
