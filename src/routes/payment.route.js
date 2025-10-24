@@ -3,7 +3,7 @@ const router = express.Router();
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const Order = require("../models/order.model");
-const authMiddleware = require("../middlewares/auth.middleware"); 
+const authMiddleware = require("../middlewares/auth.middleware");
 
 router.post("/create-checkout-session", authMiddleware, async (req, res) => {
   try {
@@ -12,14 +12,17 @@ router.post("/create-checkout-session", authMiddleware, async (req, res) => {
     if (!items || items.length === 0)
       return res.status(400).json({ error: "No items provided" });
 
-    const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const totalPrice = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
 
     const userId = req.user._id;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-      line_items: items.map(item => ({
+      line_items: items.map((item) => ({
         price_data: {
           currency: "usd",
           product_data: { name: item.name },
@@ -32,23 +35,22 @@ router.post("/create-checkout-session", authMiddleware, async (req, res) => {
       metadata: {
         userId: userId.toString(),
         totalPrice: totalPrice.toString(),
-        items: JSON.stringify(items)
+        items: JSON.stringify(items),
       },
     });
 
-
     const orderData = {
-      user: userId,
-      products: items.map(it => ({
-        product: it.id,
+      userId: userId, // بدل user: userId
+      products: items.map((it) => ({
+        productId: it.productId || it._id, // بدل product: it.id
         name: it.name,
         price: it.price,
         quantity: it.quantity,
         total: it.price * it.quantity,
       })),
       totalPrice,
-      paymentMethod: 'stripe', 
-      status: 'pending',
+      paymentMethod: "stripe",
+      status: "pending",
       stripeSessionId: session.id,
       shippingInfo,
     };
