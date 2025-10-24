@@ -5,43 +5,44 @@ const cloudinary = require("cloudinary").v2;
 
 exports.updateProfile = async (req, res) => {
     try {
+        if (!req.user)
+        return res.status(401).json({ message: "User not authenticated" });
+
         const user = await User.findById(req.user._id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        user.name = req.body.name || user.name;
-        user.email = req.body.email || user.email;
-        user.phone = req.body.phone || user.phone;
+        const { name, email, phone, oldPassword, newPassword } = req.body;
 
-        let avatarUploaded = false;
+        user.name = name || user.name;
+        user.email = email || user.email;
+        user.phone = phone || user.phone;
 
         if (req.file) {
-            const result = await cloudinary.uploader.upload(req.file.path, {
-                folder: "avatar",
-                public_id: `user-${user._id}`,
-                overwrite: true,
-            });
-
-            user.avatar = result.secure_url;
-            avatarUploaded = true;
-            fs.unlinkSync(req.file.path);
+        const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: "avatar",
+            public_id: `user-${user._id}`,
+            overwrite: true,
+        });
+        user.avatar = result.secure_url;
+        fs.unlinkSync(req.file.path);
         }
 
-        if (!user.avatar && !avatarUploaded) {
-            user.avatar = "https://res.cloudinary.com/dsso9spcd/image/upload/v1760809850/avatar/default-avatar.png";
+        if (!user.avatar) {
+        user.avatar =
+            "https://res.cloudinary.com/dsso9spcd/image/upload/v1760809850/avatar/default-avatar.png";
         }
 
-        if (req.body.oldPassword && req.body.newPassword) {
-            const isMatch = await user.matchPassword(req.body.oldPassword);
-            if (!isMatch) {
-                return res.status(400).json({ message: "Old password is incorrect" });
-            }
-            user.password = req.body.newPassword;
+        if (oldPassword && newPassword) {
+        const isMatch = await user.matchPassword(oldPassword);
+        if (!isMatch)
+            return res.status(400).json({ message: "Old password is incorrect" });
+        user.password = newPassword;
         }
 
         await user.save();
-
         res.json({ message: "Profile updated", user });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: err.message });
     }
 };
