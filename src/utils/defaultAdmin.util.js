@@ -24,8 +24,8 @@ const defaultAdmin = async () => {
 
         const admin = new User({
             name: "Sandy Azzat",
-            email: "sandyadmin@casanova.com",
-            password: "admin12356",
+            email: "sandyazzat@casanova.com",
+            password: "Admin12356",
             phone: "+201234567890",
             avatar: result.secure_url, 
             role: ROLES.ADMIN,
