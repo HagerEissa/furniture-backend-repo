@@ -31,11 +31,10 @@ exports.createReviewandRating = async (req, res) => {
 
     await product.save();
 
-    const reviewWithUser = await Review.findById(review._id).populate("userId","username email");
+    const reviewWithUser = await Review.findById(review._id).populate("userId","name email");
 
-    res.status(201).json({message: "Review added successfully", review: reviewWithUser,averageRating: newAverage,});
+    res.status(201).json({message: "Review added successfully",review: reviewWithUser,averageRating: newAverage,});
   } catch (error) {
-    console.error("Error creating review:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -48,14 +47,10 @@ exports.getReviewsByProductId = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const reviews = await Review.find({ productId }).populate(
-      "userId",
-      "username email"
-    );
+    const reviews = await Review.find({ productId }).populate("userId","name email");
 
     res.status(200).json(reviews);
   } catch (error) {
-    console.error("Error getting reviews:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -69,8 +64,9 @@ exports.updateReviewById = async (req, res) => {
     const product = await Product.findById(productId);
     const review = await Review.findOne({ productId, userId });
 
-    if (!product || !review)
+    if (!product || !review) {
       return res.status(404).json({ message: "Review not found" });
+    }
 
     const oldRating = review.rating;
 
@@ -82,20 +78,27 @@ exports.updateReviewById = async (req, res) => {
       const oldAverage = product.averageRating || 0;
       const numOfReviews = product.numOfReviews || 0;
 
-      const newAverage =
-        (oldAverage * numOfReviews - oldRating + rating) / numOfReviews;
+      let newAverage = 0;
+
+      if (numOfReviews > 0) {
+        newAverage = (oldAverage * numOfReviews - oldRating + rating) / numOfReviews;
+      } else {
+        newAverage = rating;
+      }
+
+      if (!isFinite(newAverage)) newAverage = rating;
+      if (newAverage > 5) newAverage = 5;
+      if (newAverage < 0) newAverage = 0;
 
       product.averageRating = newAverage;
       await product.save();
     }
 
-    res.status(200).json({ message: "Review updated", review });
+    res.status(200).json({message: "Review updated successfully",review,averageRating: product.averageRating});
   } catch (error) {
-    console.error("Update Review Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.deleteReviewById = async (req, res) => {
   const { productId } = req.params;
@@ -117,7 +120,9 @@ exports.deleteReviewById = async (req, res) => {
     if (!review) return res.status(404).json({ message: "Review not found" });
 
     await Review.findByIdAndDelete(review._id);
-    await Product.findByIdAndUpdate(productId, {$pull: { reviewId: review._id },});
+    await Product.findByIdAndUpdate(productId, {
+      $pull: { reviewId: review._id },
+    });
 
     const oldAverage = product.averageRating || 0;
     const numOfReviews = product.numOfReviews || 0;
@@ -135,9 +140,8 @@ exports.deleteReviewById = async (req, res) => {
 
     await product.save();
 
-    res.status(200).json({message: "Review deleted successfully",averageRating: newAverage,});
+    res.status(200).json({message: "Review deleted successfully",averageRating: newAverage});
   } catch (error) {
-    console.error("Error deleting review:", error);
     res.status(500).json({ message: error.message });
   }
 };
