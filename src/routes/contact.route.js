@@ -1,0 +1,17 @@
+const express = require("express");
+const router = express.Router();
+
+const authMiddleware = require("../middlewares/auth.middleware");
+const roleMiddleware = require("../middlewares/role.middleware");
+const { sendMessage, getMessage, deleteMessage } = require("../controllers/contact.controller");
+
+const ROLES = require("../utils/roles.util");
+
+
+router.post("/",sendMessage);
+
+router.get("/", authMiddleware, roleMiddleware(ROLES.ADMIN), getMessage);
+router.delete("/:messageId", authMiddleware, roleMiddleware(ROLES.ADMIN), deleteMessage);
+
+
+module.exports = router;

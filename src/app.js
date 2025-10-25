@@ -9,13 +9,14 @@ const helmet = require("helmet");
 
 const authRoutes = require("./routes/auth.route");
 const oauthRoutes = require("./routes/oauth.route");
+const reviewRoutes = require("./routes/review.route");
+const userRoutes = require("./routes/user.route");
+const contactRoutes = require("./routes/contact.route")
 const categoryRouter = require('./routes/category.router');
 const productRouter = require('./routes/product.router');
 const cartRouter = require('./routes/cart.router')
 const favouriteRouter = require('./routes/favourite.router')
 const orderRouter = require('./routes/order.router');
-const reviewRoutes = require("./routes/review.route");
-const userRoutes = require("./routes/user.route");
 const paymentRoutes = require("./routes/payment.route");
 const webhookRoutes = require("./routes/webhook.route");
 
@@ -50,8 +51,6 @@ app.use(passport.initialize());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
-// app.use('/images',express.static('./uploads'));//to access it by /images in angular  http://localhost:3000/images/product1.jpg
-// https://res.cloudinary.com/dsso9spcd/image/upload/furniture/xsioiooxlj3k6wxsv1xq
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -67,6 +66,8 @@ app.use("/api", authRoutes);
 app.use("/api", oauthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/product", reviewRoutes);
+app.use("/api/contact",contactRoutes)
+
 app.use("/api/payment", paymentRoutes);
 
 app.use('/api/product',productRouter);
