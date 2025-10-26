@@ -8,7 +8,7 @@ const { sendMessage, getMessage, deleteMessage } = require("../controllers/conta
 const ROLES = require("../utils/roles.util");
 
 
-router.post("/",sendMessage);
+router.post("/", authMiddleware, roleMiddleware(ROLES.USER), sendMessage);
 
 router.get("/", authMiddleware, roleMiddleware(ROLES.ADMIN), getMessage);
 router.delete("/:messageId", authMiddleware, roleMiddleware(ROLES.ADMIN), deleteMessage);

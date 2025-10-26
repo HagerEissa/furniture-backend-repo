@@ -9,7 +9,7 @@ const ROLES = require("../utils/roles.util");
 
 router.post( "/:productId/review", authMiddleware, roleMiddleware(ROLES.USER), createReviewandRating);
 
-router.get("/:productId/review", getReviewsByProductId);
+router.get("/:productId/review", authMiddleware, getReviewsByProductId);
 
 router.put("/:productId/review", authMiddleware,roleMiddleware(ROLES.USER),updateReviewById);
 
