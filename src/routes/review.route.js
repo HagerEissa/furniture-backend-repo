@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
 
+const ROLES = require("../utils/roles.util");
+
 const authMiddleware = require("../middlewares/auth.middleware");
 const roleMiddleware = require("../middlewares/role.middleware");
+
 const {deleteReviewById, updateReviewById, getReviewsByProductId, createReviewandRating } = require("../controllers/review.controller");
 
-const ROLES = require("../utils/roles.util");
 
 router.post( "/:productId/review", authMiddleware, roleMiddleware(ROLES.USER), createReviewandRating);
 

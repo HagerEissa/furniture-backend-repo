@@ -50,8 +50,6 @@ app.use(passport.initialize());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-
-
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
