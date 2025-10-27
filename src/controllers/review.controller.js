@@ -31,7 +31,7 @@ exports.createReviewandRating = async (req, res) => {
 
     await product.save();
 
-    const reviewWithUser = await Review.findById(review._id).populate("userId","name email");
+    const reviewWithUser = await Review.findById(review._id).populate("userId","name email avatar");
 
     res.status(201).json({message: "Review added successfully",review: reviewWithUser,averageRating: newAverage,});
   } catch (error) {
@@ -47,7 +47,7 @@ exports.getReviewsByProductId = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const reviews = await Review.find({ productId }).populate("userId","name email");
+    const reviews = await Review.find({ productId }).populate("userId","name email avatar");
 
     res.status(200).json(reviews);
   } catch (error) {
