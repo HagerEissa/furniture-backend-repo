@@ -17,7 +17,7 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true
       },
-      price: { // السعر وقت الطلب
+      price: { 
         type: Number,
         required: true
       },
@@ -26,7 +26,7 @@ const orderSchema = new mongoose.Schema({
         required: true,
         min: 1
       },
-      total: { // price * quantity
+      total: { 
         type: Number,
         required: true
       }

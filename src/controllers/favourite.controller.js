@@ -1,7 +1,6 @@
 const favouriteModel = require('../models/favourite.model');
 const productModel = require('../models/product.model');
 
-// add to favourite
 exports.addToFavourite=async(req,res)=>{
     try{
         const {userId,productId} = req.body;
@@ -33,7 +32,6 @@ exports.addToFavourite=async(req,res)=>{
     }
 }
 
-//getFavouriteForUser 
 exports.getFavouriteForUser=async(req,res)=>{
     try{
         const {userId} = req.params;
@@ -49,7 +47,7 @@ exports.getFavouriteForUser=async(req,res)=>{
 }
 
 
-//deleteFromFavourite 
+
 
 exports.deleteFromFavourite=async(req,res)=>{
     try{
@@ -70,7 +68,7 @@ exports.deleteFromFavourite=async(req,res)=>{
     }
 }
 
-//clearFavourite 
+
 exports.clearFavourite=async(req,res)=>{
     try{
         const {userId} = req.params;

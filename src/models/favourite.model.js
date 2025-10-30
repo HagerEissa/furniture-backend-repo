@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const favouriteSchema = new mongoose.Schema({
     userId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:'users', //wait sandy
+        ref:'users', 
         required:true
     },
     products:[
@@ -20,7 +20,6 @@ const favouriteSchema = new mongoose.Schema({
 })
 
 
-//MODEL ->instance                      'favourites'-> name of collection in database
 module.exports = mongoose.model('favourites',favouriteSchema)
 
 

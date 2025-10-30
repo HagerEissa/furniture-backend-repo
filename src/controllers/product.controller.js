@@ -1,6 +1,5 @@
 const productModel = require('../models/product.model')
 
-//getAllProducts
 exports.getAllProducts=async(req,res)=>{
     try{
         const products = await productModel.find().populate('categoryId');
@@ -10,7 +9,6 @@ exports.getAllProducts=async(req,res)=>{
     }
 }
 
-//getProductById
 exports.getProductById= async(req,res)=>{
     try{
         const product = await productModel.findById(req.params.id);
@@ -23,7 +21,6 @@ exports.getProductById= async(req,res)=>{
     }
 }
 
-//createProduct
 exports.addProduct=async(req,res)=>{
     try{
         const { name, desc,categoryId,stock } = req.body;
@@ -39,7 +36,7 @@ exports.addProduct=async(req,res)=>{
     }
 }
 
-//updateProduct
+
 exports.updateProduct=async(req,res)=>{
     try{
         if(req.file){
@@ -56,7 +53,7 @@ exports.updateProduct=async(req,res)=>{
     }
 }
 
-//deleteProduct
+
 exports.deleteProduct=async(req,res)=>{
     try{
         const product = await productModel.findByIdAndDelete(req.params.id)
@@ -69,7 +66,7 @@ exports.deleteProduct=async(req,res)=>{
     }
 }
 
-//getNewProducts
+
 exports.getNewProducts=async(req,res)=>{
     try{
         const products = await productModel.find({isnew:true})
@@ -79,12 +76,11 @@ exports.getNewProducts=async(req,res)=>{
     }
 }
 
-//getProductForList for pagination , sort ,filter
+
 exports.getProductForList = async (req, res) => {
     try {
         let { searchTerm, categoryId, sortBy, sortOrder, page, pageSize } = req.query;
 
-        // Default values
         sortBy = sortBy || 'price';
         sortOrder = sortOrder === 'asc' ? 1 : -1;
         page = Number(page) || 1;
@@ -92,19 +88,17 @@ exports.getProductForList = async (req, res) => {
 
         let queryFilter = {};
 
-        //filter by searchTerm
         if (searchTerm && searchTerm !== 'null') {
-            queryFilter.$or = [// The regex pattern ensures it finds partial matches
+            queryFilter.$or = [
                 { name: { $regex: ".*" + searchTerm + ".*", $options: 'i' } },
                 { desc: { $regex: ".*" + searchTerm + ".*", $options: 'i' } }
             ];
         }
-        //filter by categoryId
+
         if (categoryId && categoryId !== 'null') {
             queryFilter.categoryId = categoryId;
         }
 
-        // find products
         const products = await productModel.find(queryFilter)
             .sort({ [sortBy]: +sortOrder })  
             .skip((page - 1) * pageSize)
