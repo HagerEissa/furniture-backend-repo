@@ -97,3 +97,15 @@ exports.deleteOrder = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await orderModel
+      .find()
+      .populate('userId', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
