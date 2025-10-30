@@ -1,7 +1,6 @@
 const cartModel = require('../models/cart.model');
 const productModel = require('../models/product.model')
 
-// getCartForUser
 exports.getCartForUser = async(req,res)=>{
     try{
         const { userId } = req.params;
@@ -18,7 +17,6 @@ exports.getCartForUser = async(req,res)=>{
 
 
 
-// add to cart 
 exports.addToCart = async(req,res)=>{
     try{
         const {userId,productId,quantity}= req.body;
@@ -34,14 +32,13 @@ exports.addToCart = async(req,res)=>{
             return res.status(400).json({ message: 'Product is out of stock' });
         }
         const finalPrice = product.price * (1 - product.discount / 100);
-        // if first time -> create new cart
         if (!cart) { 
             cart = new cartModel({
             userId,
             products: [{ productId, quantity }],
             totalPrice: finalPrice * quantity
             });
-        }else{ //   بندور هل المنتج ده موجود؟ فالكارت 
+        }else{ 
             const productInCart = cart.products.find(
                 (p) => p.productId.toString() === productId
             );
@@ -66,7 +63,7 @@ exports.addToCart = async(req,res)=>{
     }
 }
 
-//delete product from Cart
+
 exports.deleteProductFromCart = async(req,res)=>{
     try{
         const {userId,productId}=req.params;
@@ -106,7 +103,6 @@ exports.deleteProductFromCart = async(req,res)=>{
 }
 
 
-// update quantity in cart
 exports.updateQuantity = async (req, res) => {
   try {
     const { userId, productId } = req.params;
@@ -129,10 +125,8 @@ exports.updateQuantity = async (req, res) => {
         return res.status(404).json({ message: 'Product not found' });
     }
     const finalPrice = product.price * (1 - product.discount / 100);
-    //  نطرح السعر القديم من الإجمالي
     cart.totalPrice -= finalPrice * productInCart.quantity;
 
-    // نعدل الكمية
     if(quantity>product.stock){
         return res.status(400).json({ message: 'Requested quantity exceeds available stock' });
     }
@@ -140,7 +134,6 @@ exports.updateQuantity = async (req, res) => {
     product.stock+=oldQuantity
     productInCart.quantity = quantity;
     product.stock-=quantity
-    // نضيف السعر الجديد للإجمالي
     cart.totalPrice += finalPrice * quantity;
     await product.save();
     await cart.save();
@@ -152,7 +145,7 @@ exports.updateQuantity = async (req, res) => {
 };
 
 
-//clearCart
+
 exports.clearCart = async (req, res) => {
   try {
     const { userId } = req.params;

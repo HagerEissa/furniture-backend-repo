@@ -17,7 +17,6 @@ const categorySchema =new mongoose.Schema({
     }
     );
 
-//MODEL ->instance                      'categories'-> name of collection in database
 module.exports = mongoose.model('categories',categorySchema)
 
 

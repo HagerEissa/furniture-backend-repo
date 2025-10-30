@@ -40,9 +40,9 @@ router.post("/create-checkout-session", authMiddleware, async (req, res) => {
     });
 
     const orderData = {
-      userId: userId, // بدل user: userId
+      userId: userId, 
       products: items.map((it) => ({
-        productId: it.productId || it._id, // بدل product: it.id
+        productId: it.productId || it._id, 
         name: it.name,
         price: it.price,
         quantity: it.quantity,

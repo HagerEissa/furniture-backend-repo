@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const cartSchema = new mongoose.Schema({
     userId :{
                 type:mongoose.Schema.Types.ObjectId,
-                ref:'users',   //waite sandy
+                ref:'users',   
                 required:true,
     },
     products:[
@@ -29,5 +29,4 @@ const cartSchema = new mongoose.Schema({
 })
 
 
-//MODEL ->instance                      'carts'-> name of collection in database
 module.exports = mongoose.model('carts',cartSchema)
