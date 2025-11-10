@@ -9,10 +9,7 @@ const helmet = require("helmet");
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:4200",
-  "https://furniturefrontendrepo.vercel.app",
-];
+const allowedOrigins = [process.env.LOCAL_URL, process.env.FRONTEND_URL];
 
 app.use(
   helmet({
