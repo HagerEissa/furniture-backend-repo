@@ -7,14 +7,16 @@ const path = require("path");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 
-const app = express();
+const app = express(); // ✅ لازم يكون قبل أي app.use
 
+// ✅ origins المسموح بيها
 const allowedOrigins = [
   "http://localhost:4200",
   "https://furniturefrontendrepo.vercel.app",
-  "https://furniturefrontendrepo.vercel.app/",
+  "https://furniturefrontendrepo.vercel.app/" // احتياطًا
 ];
 
+// ✅ أمن الموقع باستخدام helmet
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -29,6 +31,7 @@ app.use(
   })
 );
 
+// ✅ تفعيل CORS مرة واحدة فقط
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -43,6 +46,7 @@ app.use(
   })
 );
 
+// ✅ Stripe webhook لازم يكون قبل express.json()
 const webhookRoutes = require("./routes/webhook.route");
 app.use(
   "/api/webhook",
@@ -50,11 +54,13 @@ app.use(
   webhookRoutes
 );
 
+// ✅ باقي الـ middlewares
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(passport.initialize());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// ✅ Rate Limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -64,6 +70,7 @@ const apiLimiter = rateLimit({
 });
 app.use(apiLimiter);
 
+// ✅ استيراد كل الـ routes
 const authRoutes = require("./routes/auth.route");
 const oauthRoutes = require("./routes/oauth.route");
 const reviewRoutes = require("./routes/review.route");
@@ -76,6 +83,7 @@ const favouriteRouter = require("./routes/favourite.router");
 const orderRouter = require("./routes/order.router");
 const paymentRoutes = require("./routes/payment.route");
 
+// ✅ ربط الـ routes
 app.use("/api", authRoutes);
 app.use("/api", oauthRoutes);
 app.use("/api/user", userRoutes);
@@ -88,6 +96,7 @@ app.use("/api/cart", cartRouter);
 app.use("/api/favourite", favouriteRouter);
 app.use("/api/orders", orderRouter);
 
+// ✅ لو المسار مش موجود
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
