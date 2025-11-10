@@ -21,26 +21,41 @@ const paymentRoutes = require("./routes/payment.route");
 const webhookRoutes = require("./routes/webhook.route");
 
 const app = express();
+
 app.use(
     helmet({
         contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            imgSrc: ["'self'","data:","blob:","res.cloudinary.com",],
-            scriptSrc: ["'self'","'unsafe-inline'",],
-            styleSrc: ["'self'","'unsafe-inline'",],
-            connectSrc: ["'self'", "http://localhost:4200",],
+            imgSrc: ["'self'", "data:", "blob:", "res.cloudinary.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            connectSrc: [
+                "'self'",
+                "http://localhost:4200",
+                "https://furniturefrontendrepo.vercel.app"
+            ],
         },
         },
     })
 );
 
-app.use(
-    cors({
-        origin: "http://localhost:4200",
-        credentials: true,
-    })
-);
+const allowedOrigins = [
+  'http://localhost:4200',   
+  'https://furniturefrontendrepo.vercel.app' 
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); 
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
 
 app.use("/api/webhook", express.raw({ type: "application/json" }), webhookRoutes);
 app.use(express.json());
@@ -64,18 +79,17 @@ app.use("/api", authRoutes);
 app.use("/api", oauthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/product", reviewRoutes);
-app.use("/api/contact",contactRoutes)
+app.use("/api/contact", contactRoutes);
 
 app.use("/api/payment", paymentRoutes);
 
-app.use('/api/product',productRouter);
-app.use('/api/category',categoryRouter);
-app.use('/api/cart',cartRouter);
-app.use('/api/favourite',favouriteRouter);
+app.use('/api/product', productRouter);
+app.use('/api/category', categoryRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/favourite', favouriteRouter);
 app.use('/api/orders', orderRouter);
 
-
-app.use((req,res)=>{
+app.use((req, res) => {
     res.status(404).json({ message: "Route not found" });
 });
 
