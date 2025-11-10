@@ -6,7 +6,63 @@ require("./config/passport.config");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
-const FRONTEND_URL = "https://furniture-backend-repo-production.up.railway.app";
+
+const app = express();
+
+const allowedOrigins = [
+  "http://localhost:4200",
+  "https://furniturefrontendrepo.vercel.app",
+  "https://furniturefrontendrepo.vercel.app/",
+];
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "blob:", "res.cloudinary.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        connectSrc: ["'self'", ...allowedOrigins],
+      },
+    },
+  })
+);
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"), false);
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  })
+);
+
+const webhookRoutes = require("./routes/webhook.route");
+app.use(
+  "/api/webhook",
+  express.raw({ type: "application/json" }),
+  webhookRoutes
+);
+
+app.use(express.json());
+app.use(morgan("dev"));
+app.use(passport.initialize());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(apiLimiter);
 
 const authRoutes = require("./routes/auth.route");
 const oauthRoutes = require("./routes/oauth.route");
@@ -19,61 +75,13 @@ const cartRouter = require("./routes/cart.router");
 const favouriteRouter = require("./routes/favourite.router");
 const orderRouter = require("./routes/order.router");
 const paymentRoutes = require("./routes/payment.route");
-const webhookRoutes = require("./routes/webhook.route");
-
-const app = express();
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "blob:", "res.cloudinary.com"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        connectSrc: ["'self'", "http://localhost:4200", FRONTEND_URL],
-      },
-    },
-  })
-);
-
-app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  })
-);
-
-app.use(
-  "/api/webhook",
-  express.raw({ type: "application/json" }),
-  webhookRoutes
-);
-app.use(express.json());
-app.use(morgan("dev"));
-
-app.use(passport.initialize());
-
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many requests from this IP, please try again later",
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use(apiLimiter);
 
 app.use("/api", authRoutes);
 app.use("/api", oauthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/product", reviewRoutes);
 app.use("/api/contact", contactRoutes);
-
 app.use("/api/payment", paymentRoutes);
-
 app.use("/api/product", productRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/cart", cartRouter);
